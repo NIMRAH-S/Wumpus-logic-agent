@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wumpus Logic Agent</title>
+<style>
+  body { background: #050a0f; color: #b0d4e8; font-family: monospace; padding: 20px; }
+  #grid-container { display: grid; gap: 3px; margin-top: 20px; }
+  .cell { width: 72px; height: 72px; background: #1a2a3a; border: 1px solid #0e2a3a;
+          display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+  .cell.current { border-color: #00d4ff; }
+  button { margin: 4px; padding: 8px 16px; background: transparent; border: 1px solid #00d4ff;
+           color: #00d4ff; cursor: pointer; font-family: monospace; }
+</style>
+</head>
+<body>
+<h2 style="color:#00d4ff">Wumpus Logic Agent</h2>
+<label>Rows: <input type="range" id="rowSlider" min="3" max="7" value="4"> <span id="rowVal">4</span></label><br>
+<label>Cols: <input type="range" id="colSlider" min="3" max="7" value="4"> <span id="colVal">4</span></label><br>
+<label>Pits: <input type="range" id="pitSlider" min="1" max="5" value="2"> <span id="pitVal">2</span></label><br>
+<button onclick="initGame()">NEW EPISODE</button>
+<div id="grid-container"></div>
+<div id="log" style="margin-top:16px;font-size:0.75rem;color:#506070"></div>
+
+<script>
+let ROWS, COLS, PITS, grid = [], agentPos, wumpusPos, pitPositions = [], goldPos;
+
+document.getElementById('rowSlider').oninput = e => document.getElementById('rowVal').textContent = e.target.value;
+document.getElementById('colSlider').oninput = e => document.getElementById('colVal').textContent = e.target.value;
+document.getElementById('pitSlider').oninput = e => document.getElementById('pitVal').textContent = e.target.value;
+
+function initGame() {
+  ROWS = +document.getElementById('rowSlider').value;
+  COLS = +document.getElementById('colSlider').value;
+  PITS = +document.getElementById('pitSlider').value;
+  grid = [];
+
+  for (let r = 0; r < ROWS; r++) {
+    grid[r] = [];
+    for (let c = 0; c < COLS; c++)
+      grid[r][c] = { r, c, hasWumpus: false, hasPit: false, hasGold: false, percepts: [] };
+  }
+
+  // Place hazards
+  wumpusPos = randomCell(1);
+  grid[wumpusPos.r][wumpusPos.c].hasWumpus = true;
+  pitPositions = [];
+  for (let i = 0; i < Math.min(PITS, ROWS*COLS-3); i++) {
+    let p = randomCell(2);
+    if (p) { grid[p.r][p.c].hasPit = true; pitPositions.push(p); }
+  }
+  goldPos = randomCell(1);
+  if (goldPos) grid[goldPos.r][goldPos.c].hasGold = true;
+
+  // Generate percepts
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++) {
+      let p = [];
+      getAdj(r,c).forEach(({r:ar,c:ac}) => {
+        if (grid[ar][ac].hasPit) p.push('B');
+        if (grid[ar][ac].hasWumpus) p.push('S');
+      });
+      if (grid[r][c].hasGold) p.push('G');
+      grid[r][c].percepts = [...new Set(p)];
+    }
+
+  agentPos = { r: ROWS-1, c: 0 };
+  log('Episode started: ' + ROWS + 'x' + COLS);
+  renderGrid();
+}
+
+function randomCell(minDist) {
+  for (let i = 0; i < 200; i++) {
+    let r = Math.floor(Math.random()*ROWS), c = Math.floor(Math.random()*COLS);
+    if (Math.abs(r-(ROWS-1))+Math.abs(c-0) >= minDist && !grid[r][c].hasWumpus && !grid[r][c].hasPit && !grid[r][c].hasGold)
+      return {r,c};
+  }
+  return null;
+}
+
+function getAdj(r,c) {
+  return [{r:r-1,c},{r:r+1,c},{r,c:c-1},{r,c:c+1}].filter(p=>p.r>=0&&p.r<ROWS&&p.c>=0&&p.c<COLS);
+}
+
+function renderGrid() {
+  let container = document.getElementById('grid-container');
+  container.style.gridTemplateColumns = `repeat(${COLS}, 72px)`;
+  container.innerHTML = '';
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++) {
+      let div = document.createElement('div');
+      div.className = 'cell' + (agentPos.r===r&&agentPos.c===c ? ' current' : '');
+      div.textContent = agentPos.r===r&&agentPos.c===c ? '🤖' : '?';
+      container.appendChild(div);
+    }
+}
+
+function log(msg) {
+  document.getElementById('log').innerHTML += '<br>> ' + msg;
+}
+</script>
+</body>
+</html>
