@@ -95,6 +95,88 @@ function renderGrid() {
     }
 }
 
+// KNOWLEDGE BASE (CNF Resolution Refutation)
+let kb = [];
+
+function tellKB(clause) {
+  let clauseStr = [...clause].sort().join(',');
+  for (let ex of kb) if ([...ex].sort().join(',') === clauseStr) return;
+  kb.push([...clause]);
+}
+
+function askKB(literal) {
+  // Resolution Refutation: add ¬literal, try to derive ⊥
+  let negLiteral = literal.startsWith('!') ? literal.slice(1) : '!' + literal;
+  let clauses = kb.map(c => [...c]);
+  clauses.push([negLiteral]);
+
+  for (let steps = 0; steps < 1000; steps++) {
+    let newClauses = [], n = clauses.length, foundEmpty = false;
+    for (let i = 0; i < n && !foundEmpty; i++) {
+      for (let j = i+1; j < n && !foundEmpty; j++) {
+        for (let resolvent of resolve(clauses[i], clauses[j])) {
+          if (resolvent.length === 0) { foundEmpty = true; break; }
+          if (!clauseExists(clauses, resolvent) && !clauseExists(newClauses, resolvent))
+            newClauses.push(resolvent);
+        }
+      }
+    }
+    if (foundEmpty) return true;
+    if (newClauses.length === 0) return false;
+    clauses = clauses.concat(newClauses);
+    if (clauses.length > 500) return false;
+  }
+  return false;
+}
+
+function resolve(c1, c2) {
+  let results = [];
+  for (let lit of c1) {
+    let comp = lit.startsWith('!') ? lit.slice(1) : '!' + lit;
+    if (c2.includes(comp)) {
+      let res = [...new Set([...c1.filter(l=>l!==lit), ...c2.filter(l=>l!==comp)])];
+      if (!res.some(l => res.includes(l.startsWith('!')?l.slice(1):'!'+l) && l !== (l.startsWith('!')?l.slice(1):'!'+l)))
+        results.push(res);
+    }
+  }
+  return results;
+}
+
+function clauseExists(list, clause) {
+  let cs = [...clause].sort().join(',');
+  return list.some(c => [...c].sort().join(',') === cs);
+}
+
+function processPercepts(r, c) {
+  let cell = grid[r][c];
+  let adj = getAdj(r, c);
+
+  // Encode biconditional B ⟺ (P_adj1 ∨ ...) into CNF
+  if (cell.percepts.includes('B')) {
+    tellKB([`B_${r}_${c}`]);
+    tellKB([`!B_${r}_${c}`, ...adj.map(a=>`P_${a.r}_${a.c}`)]);
+    adj.forEach(a => tellKB([`!P_${a.r}_${a.c}`, `B_${r}_${c}`]));
+  } else {
+    tellKB([`!B_${r}_${c}`]);
+    adj.forEach(a => tellKB([`!P_${a.r}_${a.c}`]));
+  }
+
+  if (cell.percepts.includes('S')) {
+    tellKB([`S_${r}_${c}`]);
+    tellKB([`!S_${r}_${c}`, ...adj.map(a=>`W_${a.r}_${a.c}`)]);
+    adj.forEach(a => tellKB([`!W_${a.r}_${a.c}`, `S_${r}_${c}`]));
+  } else {
+    tellKB([`!S_${r}_${c}`]);
+    adj.forEach(a => tellKB([`!W_${a.r}_${a.c}`]));
+  }
+
+  // Try to prove safety for all adjacent cells
+  adj.forEach(a => {
+    if (askKB(`!P_${a.r}_${a.c}`) && askKB(`!W_${a.r}_${a.c}`))
+      safeCells.add(`${a.r},${a.c}`);
+  });
+}
+
 function log(msg) {
   document.getElementById('log').innerHTML += '<br>> ' + msg;
 }
