@@ -3,8 +3,8 @@
 A **web-based Knowledge-Based Agent** that navigates a dynamic Wumpus World grid using **Propositional Logic** and **Resolution Refutation** to deduce safe cells — without any hardcoded rules or machine learning.
 
 ## 🔗 Links
-- **Live Demo:** [[your-vercel-url.vercel.app](https://wumpus-logic-agent-eta.vercel.app/)](#)
-- **LinkedIn Post:** [[linkedin.com/in/yourprofile](https://www.linkedin.com/posts/nimrah-shahid-b634b51ba_artificialintelligence-propositionallogic-activity-7456022535378272256-0VEL?utm_source=share&utm_medium=member_desktop&rcm=ACoAADL5szsB7C6m7cWEnz7OxXDimHtvTnBsyVg)](#)
+- **Live Demo:** [(https://wumpus-logic-agent-eta.vercel.app/)](#)
+- **LinkedIn Post:** [(https://www.linkedin.com/posts/nimrah-shahid-b634b51ba_artificialintelligence-propositionallogic-activity-7456022535378272256-0VEL?utm_source=share&utm_medium=member_desktop&rcm=ACoAADL5szsB7C6m7cWEnz7OxXDimHtvTnBsyVg)](#)
 
 ---
 
